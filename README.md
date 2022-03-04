@@ -32,6 +32,7 @@ USAGE:
 OPTIONS:
     -c, --config <CONFIG_PATH>                   Chain config path [default: config.toml]
     -h, --help                                   Print help information
+    -l, --log <LOG_FILE>                         log config path [default: crypto-log4rs.yaml]
     -p, --private_key_path <PRIVATE_KEY_PATH>    private key path [default: private_key]
 ```
 

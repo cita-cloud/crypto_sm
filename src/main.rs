@@ -54,6 +54,9 @@ struct RunOpts {
     /// private key path
     #[clap(short = 'p', long = "private_key_path", default_value = "private_key")]
     private_key_path: String,
+    /// log config path
+    #[clap(short = 'l', long = "log", default_value = "crypto-log4rs.yaml")]
+    log_file: String,
 }
 
 fn main() {
@@ -217,7 +220,9 @@ impl CryptoService for CryptoServer {
 async fn run(opts: RunOpts) -> Result<(), StatusCode> {
     let config = CryptoConfig::new(&opts.config_path);
     // init log4rs
-    log4rs::init_file(&config.log_file, Default::default()).unwrap();
+    log4rs::init_file(&opts.log_file, Default::default())
+        .map_err(|e| println!("log init err: {}", e))
+        .unwrap();
 
     let grpc_port = config.crypto_port.to_string();
 
