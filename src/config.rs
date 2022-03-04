@@ -19,16 +19,11 @@ use serde_derive::Deserialize;
 #[serde(default)]
 pub struct CryptoConfig {
     pub crypto_port: u16,
-
-    pub log_file: String,
 }
 
 impl Default for CryptoConfig {
     fn default() -> Self {
-        Self {
-            crypto_port: 50005,
-            log_file: "crypto-log4rs.yaml".to_string(),
-        }
+        Self { crypto_port: 50005 }
     }
 }
 
@@ -47,6 +42,5 @@ mod tests {
         let config = CryptoConfig::new("example/config.toml");
 
         assert_eq!(config.crypto_port, 60005);
-        assert_eq!(config.log_file, "crypto-log4rs.yaml".to_string());
     }
 }
