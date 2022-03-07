@@ -1,0 +1,34 @@
+[package]
+name = "crypto"
+version = "7.0.0"
+authors = ["Rivtower Technologies <contact@rivtower.com>"]
+license = "Apache-2.0"
+edition = "2018"
+
+[dependencies]
+log = "0.4.14"
+log4rs = { version = "1.0", features = ["default", "gzip"] }
+clap = { version = "3.0.14", features = ["derive"] }
+git-version = "0.3.5"
+tonic = "0.5.2"
+prost = "0.8.0"
+tokio = { version = "1.0", features = ["full"] }
+hex = "0.4"
+
+cloud-util = { git = "https://github.com/cita-cloud/cloud-util", branch = "WIP-v7.0.0" }
+cita_cloud_proto = { git = "https://github.com/cita-cloud/cita_cloud_proto", branch = "WIP-v7.0.0" }
+status_code = { package = "cloud-code", git = "https://github.com/cita-cloud/status_code", branch = "WIP-v7.0.0" }
+
+libsm = "0.4.0"
+efficient-sm2 = "0.1.5"
+rayon = "1.5"
+serde = "1.0.126"
+serde_derive = "1.0.126"
+
+[profile.release.package."*"]
+# Set the default for dependencies.
+debug = 0
+
+[profile.release]
+# Add debug info -- line tables only
+debug = 1
