@@ -21,6 +21,7 @@ pub const CONFIG_TYPE: &str = "sm";
 
 pub struct Crypto {
     private_key: Vec<u8>,
+    public_key: Vec<u8>,
 }
 
 impl Crypto {
@@ -32,7 +33,11 @@ impl Crypto {
             panic!("not private key in private_key_path");
         }
         let private_key = hex::decode(hex_private_key).expect("decode private_key failed");
-        Crypto { private_key }
+        let public_key = sk2pk(&private_key);
+        Crypto {
+            private_key,
+            public_key,
+        }
     }
 
     pub fn hash_data(&self, data: &[u8]) -> Vec<u8> {
@@ -45,7 +50,7 @@ impl Crypto {
 
     pub fn sign_message(&self, msg: &[u8]) -> Result<Vec<u8>, StatusCode> {
         let privkey = &self.private_key;
-        let pubkey = &sk2pk(privkey);
+        let pubkey = &self.public_key;
         sign_message(pubkey, privkey, msg)
     }
 
