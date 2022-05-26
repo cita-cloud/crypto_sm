@@ -19,7 +19,7 @@ cloud-util = { git = "https://github.com/cita-cloud/cloud-util", branch = "WIP-v
 cita_cloud_proto = { git = "https://github.com/cita-cloud/cita_cloud_proto", branch = "WIP-v7.0.0" }
 status_code = { package = "cloud-code", git = "https://github.com/cita-cloud/status_code", branch = "WIP-v7.0.0" }
 
-libsm = "0.4.0"
+libsm = "0.5.0"
 efficient-sm2 = "0.1.5"
 rayon = "1.5"
 serde = "1.0.126"
