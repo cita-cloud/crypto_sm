@@ -14,17 +14,11 @@
 
 mod config;
 mod crypto;
+mod health_check;
 mod sm;
 
 use clap::Parser;
-use git_version::git_version;
 use log::{debug, info, warn};
-
-const GIT_VERSION: &str = git_version!(
-    args = ["--tags", "--always", "--dirty=-modified"],
-    fallback = "unknown"
-);
-const GIT_HOMEPAGE: &str = "https://github.com/cita-cloud/crypto_sm";
 
 /// This doc string acts as a help message when the user runs '--help'
 /// as do all doc strings on fields
@@ -37,9 +31,6 @@ struct Opts {
 
 #[derive(Parser)]
 enum SubCommand {
-    /// print information from git
-    #[clap(name = "git")]
-    GitInfo,
     /// run this service
     #[clap(name = "run")]
     Run(RunOpts),
@@ -67,10 +58,6 @@ fn main() {
     // You can handle information about subcommands by requesting their matches by name
     // (as below), requesting just the name used, or both at the same time
     match opts.subcmd {
-        SubCommand::GitInfo => {
-            println!("git version: {}", GIT_VERSION);
-            println!("homepage: {}", GIT_HOMEPAGE);
-        }
         SubCommand::Run(opts) => {
             let fin = run(opts);
             warn!("Should not reach here {:?}", fin);
@@ -78,6 +65,7 @@ fn main() {
     }
 }
 
+use crate::health_check::HealthCheckServer;
 use cita_cloud_proto::blockchain::RawTransactions;
 use cita_cloud_proto::common::{Empty, Hash, HashResponse};
 use cita_cloud_proto::crypto::{
@@ -85,6 +73,7 @@ use cita_cloud_proto::crypto::{
     GetCryptoInfoResponse, HashDataRequest, RecoverSignatureRequest, RecoverSignatureResponse,
     SignMessageRequest, SignMessageResponse, VerifyDataHashRequest,
 };
+use cita_cloud_proto::health_check::health_server::HealthServer;
 use tonic::{transport::Server, Request, Response, Status};
 
 use crate::config::CryptoConfig;
@@ -239,6 +228,7 @@ async fn run(opts: RunOpts) -> Result<(), StatusCode> {
         .add_service(CryptoServiceServer::new(CryptoServer::new(Crypto::new(
             &opts.private_key_path,
         ))))
+        .add_service(HealthServer::new(HealthCheckServer {}))
         .serve(addr)
         .await
         .map_err(|e| {
