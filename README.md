@@ -1,5 +1,5 @@
 # crypto_sm
-`CITA-Cloud`中[crypto微服务](https://github.com/cita-cloud/cita_cloud_proto/blob/WIP-v7.0.0/protos/crypto.proto)的实现，采用国密签名算法（`sm2`）和哈希算法(`sm3`)组合。
+`CITA-Cloud`中[crypto微服务](https://github.com/cita-cloud/cita_cloud_proto/blob/master/protos/crypto.proto)的实现，采用国密签名算法（`sm2`）和哈希算法(`sm3`)组合。
 ## 编译docker镜像
 ```
 docker build -t citacloud/crypto_sm .
@@ -8,7 +8,7 @@ docker build -t citacloud/crypto_sm .
 
 ```
 $ crypto -h
-crypto 7.0.0
+crypto 6.5.0
 Rivtower Technologies.
 This doc string acts as a help message when the user runs '--help' as do all doc strings on fields
 
@@ -20,19 +20,8 @@ OPTIONS:
     -V, --version    Print version information
 
 SUBCOMMANDS:
-    git     print information from git
     help    Print this message or the help of the given subcommand(s)
     run     run this service
-```
-
-### crypto-git
-
-打印`git`相关的信息。
-
-```
-$ crypto git   
-git version: 9c185c0-modified
-homepage: https://github.com/cita-cloud/crypto_sm
 ```
 
 ### crypto-run
