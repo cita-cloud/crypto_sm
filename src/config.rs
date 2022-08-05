@@ -19,11 +19,21 @@ use serde_derive::Deserialize;
 #[serde(default)]
 pub struct CryptoConfig {
     pub crypto_port: u16,
+    pub enable_metrics: bool,
+    pub metrics_port: u16,
+    pub metrics_buckets: Vec<f64>,
 }
 
 impl Default for CryptoConfig {
     fn default() -> Self {
-        Self { crypto_port: 50005 }
+        Self {
+            crypto_port: 50005,
+            enable_metrics: true,
+            metrics_port: 60005,
+            metrics_buckets: vec![
+                0.25, 0.5, 0.75, 1.0, 2.5, 5.0, 7.5, 10.0, 25.0, 50.0, 75.0, 100.0, 250.0, 500.0,
+            ],
+        }
     }
 }
 
