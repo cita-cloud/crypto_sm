@@ -8,7 +8,7 @@ docker build -t citacloud/crypto_sm .
 
 ```
 $ crypto -h
-crypto 6.5.0
+crypto 6.6.0
 Rivtower Technologies.
 This doc string acts as a help message when the user runs '--help' as do all doc strings on fields
 
