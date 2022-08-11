@@ -14,9 +14,9 @@ prost = "0.10"
 tokio = { version = "1.20", features = ["full"] }
 hex = "0.4"
 
-cloud-util = { git = "https://github.com/cita-cloud/cloud-util" }
-cita_cloud_proto = { git = "https://github.com/cita-cloud/cita_cloud_proto" }
-status_code = { package = "cloud-code", git = "https://github.com/cita-cloud/status_code" }
+cloud-util = "0.4.1"
+cita_cloud_proto = "6.6.0"
+status_code = { package = "cloud-code", version = "0.4.0" }
 
 libsm = "0.5"
 efficient-sm2 = "0.1"
