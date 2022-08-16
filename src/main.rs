@@ -32,8 +32,8 @@ use cita_cloud_proto::crypto::{
     SignMessageRequest, SignMessageResponse, VerifyDataHashRequest,
 };
 use cita_cloud_proto::health_check::health_server::HealthServer;
-use cloud_util::metrics::{run_metrics_exporter, MiddlewareLayer};
 use clap::Parser;
+use cloud_util::metrics::{run_metrics_exporter, MiddlewareLayer};
 use log::{debug, info, warn};
 use status_code::StatusCode;
 use std::net::AddrParseError;
