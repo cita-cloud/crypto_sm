@@ -18,9 +18,26 @@ mod health_check;
 mod panic_hook;
 mod sm;
 
+use crate::config::CryptoConfig;
+use crate::crypto::Crypto;
+use crate::health_check::HealthCheckServer;
 use crate::panic_hook::set_panic_handler;
+use crate::sm::{check_transactions, ADDR_BYTES_LEN, SM2_SIGNATURE_BYTES_LEN};
+
+use cita_cloud_proto::blockchain::RawTransactions;
+use cita_cloud_proto::common::{Empty, Hash, HashResponse};
+use cita_cloud_proto::crypto::{
+    crypto_service_server::CryptoService, crypto_service_server::CryptoServiceServer,
+    GetCryptoInfoResponse, HashDataRequest, RecoverSignatureRequest, RecoverSignatureResponse,
+    SignMessageRequest, SignMessageResponse, VerifyDataHashRequest,
+};
+use cita_cloud_proto::health_check::health_server::HealthServer;
 use clap::Parser;
+use cloud_util::metrics::{run_metrics_exporter, MiddlewareLayer};
 use log::{debug, info, warn};
+use status_code::StatusCode;
+use std::net::AddrParseError;
+use tonic::{transport::Server, Request, Response, Status};
 
 /// This doc string acts as a help message when the user runs '--help'
 /// as do all doc strings on fields
@@ -67,24 +84,6 @@ fn main() {
         }
     }
 }
-
-use crate::health_check::HealthCheckServer;
-use cita_cloud_proto::blockchain::RawTransactions;
-use cita_cloud_proto::common::{Empty, Hash, HashResponse};
-use cita_cloud_proto::crypto::{
-    crypto_service_server::CryptoService, crypto_service_server::CryptoServiceServer,
-    GetCryptoInfoResponse, HashDataRequest, RecoverSignatureRequest, RecoverSignatureResponse,
-    SignMessageRequest, SignMessageResponse, VerifyDataHashRequest,
-};
-use cita_cloud_proto::health_check::health_server::HealthServer;
-use tonic::{transport::Server, Request, Response, Status};
-
-use crate::config::CryptoConfig;
-use crate::crypto::Crypto;
-use crate::sm::{check_transactions, ADDR_BYTES_LEN, SM2_SIGNATURE_BYTES_LEN};
-
-use status_code::StatusCode;
-use std::net::AddrParseError;
 
 // grpc server of RPC
 pub struct CryptoServer {
@@ -218,7 +217,7 @@ async fn run(opts: RunOpts) -> Result<(), StatusCode> {
 
     let grpc_port = config.crypto_port.to_string();
 
-    info!("grpc port of this service: {}", grpc_port);
+    info!("grpc port of crypto_sm: {}", grpc_port);
 
     let addr_str = format!("0.0.0.0:{}", grpc_port);
     let addr = addr_str.parse().map_err(|e: AddrParseError| {
@@ -226,18 +225,49 @@ async fn run(opts: RunOpts) -> Result<(), StatusCode> {
         StatusCode::FatalError
     })?;
 
-    info!("start grpc server!");
-    Server::builder()
-        .add_service(CryptoServiceServer::new(CryptoServer::new(Crypto::new(
-            &opts.private_key_path,
-        ))))
-        .add_service(HealthServer::new(HealthCheckServer {}))
-        .serve(addr)
-        .await
-        .map_err(|e| {
-            warn!("start crypto grpc server failed: {} ", e.to_string());
-            StatusCode::FatalError
-        })?;
+    let layer = if config.enable_metrics {
+        tokio::spawn(async move {
+            run_metrics_exporter(config.metrics_port).await.unwrap();
+        });
+
+        Some(
+            tower::ServiceBuilder::new()
+                .layer(MiddlewareLayer::new(config.metrics_buckets))
+                .into_inner(),
+        )
+    } else {
+        None
+    };
+
+    info!("start crypto_sm grpc server");
+    if layer.is_some() {
+        info!("metrics on");
+        Server::builder()
+            .layer(layer.unwrap())
+            .add_service(CryptoServiceServer::new(CryptoServer::new(Crypto::new(
+                &opts.private_key_path,
+            ))))
+            .add_service(HealthServer::new(HealthCheckServer {}))
+            .serve(addr)
+            .await
+            .map_err(|e| {
+                warn!("start crypto_sm grpc server failed: {} ", e.to_string());
+                StatusCode::FatalError
+            })?;
+    } else {
+        info!("metrics off");
+        Server::builder()
+            .add_service(CryptoServiceServer::new(CryptoServer::new(Crypto::new(
+                &opts.private_key_path,
+            ))))
+            .add_service(HealthServer::new(HealthCheckServer {}))
+            .serve(addr)
+            .await
+            .map_err(|e| {
+                warn!("start crypto_sm grpc server failed: {} ", e.to_string());
+                StatusCode::FatalError
+            })?;
+    }
 
     Ok(())
 }
