@@ -209,6 +209,8 @@ impl CryptoService for CryptoServer {
 
 #[tokio::main]
 async fn run(opts: RunOpts) -> Result<(), StatusCode> {
+    tokio::spawn(cloud_util::signal::handle_signals());
+
     let config = CryptoConfig::new(&opts.config_path);
     // init log4rs
     log4rs::init_file(&opts.log_file, Default::default())
