@@ -1,6 +1,6 @@
 [package]
 name = "crypto"
-version = "6.6.0"
+version = "6.6.1"
 authors = ["Rivtower Technologies <contact@rivtower.com>"]
 license = "Apache-2.0"
 edition = "2021"
@@ -14,18 +14,16 @@ prost = "0.10"
 tokio = { version = "1.20", features = ["full"] }
 hex = "0.4"
 tower = "0.4.13"
-
-cloud-util = { git = "https://github.com/cita-cloud/cloud-util" }
-cita_cloud_proto = { git = "https://github.com/cita-cloud/cita_cloud_proto" }
-status_code = { package = "cloud-code", git = "https://github.com/cita-cloud/status_code" }
-
 libsm = "0.5"
 efficient-sm2 = "0.1"
 rayon = "1.5"
 serde = "1.0"
 serde_derive = "1.0"
-
 backtrace = "0.3"
+
+cita_cloud_proto = "=6.6.1"
+status_code = { package = "cloud-code", version = "0.5" }
+cloud-util = "0.5.0"
 
 [profile.release.package."*"]
 # Set the default for dependencies.
