@@ -14,9 +14,9 @@
 
 use cita_cloud_proto::blockchain::raw_transaction::Tx::{NormalTx, UtxoTx};
 use cita_cloud_proto::blockchain::{RawTransaction, RawTransactions};
+use cita_cloud_proto::status_code::StatusCodeEnum;
 use cloud_util::common::get_tx_hash;
 use prost::Message;
-use status_code::StatusCode;
 
 pub const SM2_SIGNATURE_BYTES_LEN: usize = 128;
 pub const HASH_BYTES_LEN: usize = 32;
@@ -32,14 +32,14 @@ fn sm2_sign(
     pubkey: &[u8],
     privkey: &[u8],
     msg: &[u8],
-) -> Result<[u8; SM2_SIGNATURE_BYTES_LEN], StatusCode> {
+) -> Result<[u8; SM2_SIGNATURE_BYTES_LEN], StatusCodeEnum> {
     let key_pair = efficient_sm2::KeyPair::new(privkey).map_err(|e| {
         log::warn!("sm2_sign: KeyPair_new failed: {}", e);
-        StatusCode::ConstructKeyPairError
+        StatusCodeEnum::ConstructKeyPairError
     })?;
     let sig = key_pair.sign(msg).map_err(|e| {
         log::warn!("sm2_sign: KeyPair_sign failed: {}", e);
-        StatusCode::SignError
+        StatusCodeEnum::SignError
     })?;
 
     let mut sig_bytes = [0u8; SM2_SIGNATURE_BYTES_LEN];
@@ -49,7 +49,7 @@ fn sm2_sign(
     Ok(sig_bytes)
 }
 
-fn sm2_recover(signature: &[u8], message: &[u8]) -> Result<Vec<u8>, StatusCode> {
+fn sm2_recover(signature: &[u8], message: &[u8]) -> Result<Vec<u8>, StatusCodeEnum> {
     let r = &signature[0..32];
     let s = &signature[32..64];
     let pk = &signature[64..];
@@ -57,12 +57,12 @@ fn sm2_recover(signature: &[u8], message: &[u8]) -> Result<Vec<u8>, StatusCode> 
     let public_key = efficient_sm2::PublicKey::new(&pk[..32], &pk[32..]);
     let sig = efficient_sm2::Signature::new(r, s).map_err(|e| {
         log::warn!("sm2_recover: Signature_new failed: {}", e);
-        StatusCode::ConstructSigError
+        StatusCodeEnum::ConstructSigError
     })?;
 
     sig.verify(&public_key, message).map_err(|e| {
         log::warn!("sm2_recover: Signature_verify failed: {}", e);
-        StatusCode::SigCheckError
+        StatusCodeEnum::SigCheckError
     })?;
 
     Ok(pk.to_vec())
@@ -72,13 +72,13 @@ pub fn hash_data(data: &[u8]) -> Vec<u8> {
     sm3_hash(data).to_vec()
 }
 
-pub fn verify_data_hash(data: &[u8], hash: &[u8]) -> Result<(), StatusCode> {
+pub fn verify_data_hash(data: &[u8], hash: &[u8]) -> Result<(), StatusCodeEnum> {
     if hash.len() != HASH_BYTES_LEN {
-        Err(StatusCode::HashLenError)
+        Err(StatusCodeEnum::HashLenError)
     } else if hash == hash_data(data) {
         Ok(())
     } else {
-        Err(StatusCode::HashCheckError)
+        Err(StatusCodeEnum::HashCheckError)
     }
 }
 
@@ -97,19 +97,19 @@ pub fn pk2address(pk: &[u8]) -> Vec<u8> {
     hash_data(pk)[HASH_BYTES_LEN - ADDR_BYTES_LEN..].to_vec()
 }
 
-pub fn sign_message(pubkey: &[u8], privkey: &[u8], msg: &[u8]) -> Result<Vec<u8>, StatusCode> {
+pub fn sign_message(pubkey: &[u8], privkey: &[u8], msg: &[u8]) -> Result<Vec<u8>, StatusCodeEnum> {
     Ok(sm2_sign(pubkey, privkey, msg)?.to_vec())
 }
 
-pub fn recover_signature(msg: &[u8], signature: &[u8]) -> Result<Vec<u8>, StatusCode> {
+pub fn recover_signature(msg: &[u8], signature: &[u8]) -> Result<Vec<u8>, StatusCodeEnum> {
     if signature.len() != SM2_SIGNATURE_BYTES_LEN {
-        Err(StatusCode::SigLenError)
+        Err(StatusCodeEnum::SigLenError)
     } else {
         sm2_recover(signature, msg)
     }
 }
 
-pub fn check_transactions(raw_txs: &RawTransactions) -> StatusCode {
+pub fn check_transactions(raw_txs: &RawTransactions) -> StatusCodeEnum {
     use rayon::prelude::*;
 
     match tokio::task::block_in_place(|| {
@@ -128,18 +128,18 @@ pub fn check_transactions(raw_txs: &RawTransactions) -> StatusCode {
 
                 Ok(())
             })
-            .collect::<Result<(), StatusCode>>()
+            .collect::<Result<(), StatusCodeEnum>>()
     }) {
-        Ok(()) => StatusCode::Success,
+        Ok(()) => StatusCodeEnum::Success,
         Err(status) => status,
     }
 }
 
-fn check_transaction(raw_tx: &RawTransaction) -> Result<(), StatusCode> {
+fn check_transaction(raw_tx: &RawTransaction) -> Result<(), StatusCodeEnum> {
     match raw_tx.tx.as_ref() {
         Some(NormalTx(normal_tx)) => {
             if normal_tx.witness.is_none() {
-                return Err(StatusCode::NoneWitness);
+                return Err(StatusCodeEnum::NoneWitness);
             }
 
             let witness = normal_tx.witness.as_ref().unwrap();
@@ -150,10 +150,10 @@ fn check_transaction(raw_tx: &RawTransaction) -> Result<(), StatusCode> {
             if let Some(tx) = &normal_tx.transaction {
                 tx.encode(&mut tx_bytes).map_err(|_| {
                     log::warn!("check_raw_tx: encode transaction failed");
-                    StatusCode::EncodeError
+                    StatusCodeEnum::EncodeError
                 })?;
             } else {
-                return Err(StatusCode::NoneTransaction);
+                return Err(StatusCodeEnum::NoneTransaction);
             }
 
             let tx_hash = &normal_tx.transaction_hash;
@@ -163,7 +163,7 @@ fn check_transaction(raw_tx: &RawTransaction) -> Result<(), StatusCode> {
             if &pk2address(&recover_signature(tx_hash, signature)?) == sender {
                 Ok(())
             } else {
-                Err(StatusCode::SigCheckError)
+                Err(StatusCodeEnum::SigCheckError)
             }
         }
         Some(UtxoTx(utxo_tx)) => {
@@ -171,17 +171,17 @@ fn check_transaction(raw_tx: &RawTransaction) -> Result<(), StatusCode> {
 
             // limit witnesses length is 1
             if witnesses.len() != 1 {
-                return Err(StatusCode::InvalidWitness);
+                return Err(StatusCodeEnum::InvalidWitness);
             }
 
             let mut tx_bytes: Vec<u8> = Vec::new();
             if let Some(tx) = utxo_tx.transaction.as_ref() {
                 tx.encode(&mut tx_bytes).map_err(|_| {
                     log::warn!("check_raw_tx: encode utxo failed");
-                    StatusCode::EncodeError
+                    StatusCodeEnum::EncodeError
                 })?;
             } else {
-                return Err(StatusCode::NoneUtxo);
+                return Err(StatusCodeEnum::NoneUtxo);
             }
 
             let tx_hash = &utxo_tx.transaction_hash;
@@ -192,12 +192,12 @@ fn check_transaction(raw_tx: &RawTransaction) -> Result<(), StatusCode> {
                 let sender = &w.sender;
 
                 if &pk2address(&recover_signature(tx_hash, signature)?) != sender {
-                    return Err(StatusCode::SigCheckError);
+                    return Err(StatusCodeEnum::SigCheckError);
                 }
             }
             Ok(())
         }
-        None => Err(StatusCode::NoneRawTx),
+        None => Err(StatusCodeEnum::NoneRawTx),
     }
 }
 

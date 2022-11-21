@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use crate::sm::{hash_data, pk2address, recover_signature, sign_message, sk2pk, verify_data_hash};
-use status_code::StatusCode;
+use cita_cloud_proto::status_code::StatusCodeEnum;
 use std::fs;
 use std::path::Path;
 
@@ -44,17 +44,21 @@ impl Crypto {
         hash_data(data)
     }
 
-    pub fn verify_data_hash(&self, data: &[u8], hash: &[u8]) -> StatusCode {
-        verify_data_hash(data, hash).map_or_else(|e| e, |_| StatusCode::Success)
+    pub fn verify_data_hash(&self, data: &[u8], hash: &[u8]) -> StatusCodeEnum {
+        verify_data_hash(data, hash).map_or_else(|e| e, |_| StatusCodeEnum::Success)
     }
 
-    pub fn sign_message(&self, msg: &[u8]) -> Result<Vec<u8>, StatusCode> {
+    pub fn sign_message(&self, msg: &[u8]) -> Result<Vec<u8>, StatusCodeEnum> {
         let privkey = &self.private_key;
         let pubkey = &self.public_key;
         sign_message(pubkey, privkey, msg)
     }
 
-    pub fn recover_signature(&self, msg: &[u8], signature: &[u8]) -> Result<Vec<u8>, StatusCode> {
+    pub fn recover_signature(
+        &self,
+        msg: &[u8],
+        signature: &[u8],
+    ) -> Result<Vec<u8>, StatusCodeEnum> {
         let pub_key = recover_signature(msg, signature)?;
         Ok(pk2address(&pub_key))
     }

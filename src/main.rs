@@ -25,17 +25,17 @@ use crate::panic_hook::set_panic_handler;
 use crate::sm::{check_transactions, ADDR_BYTES_LEN, SM2_SIGNATURE_BYTES_LEN};
 
 use cita_cloud_proto::blockchain::RawTransactions;
-use cita_cloud_proto::common::{Empty, Hash, HashResponse};
+use cita_cloud_proto::common::{Empty, Hash, HashResponse, StatusCode};
 use cita_cloud_proto::crypto::{
     crypto_service_server::CryptoService, crypto_service_server::CryptoServiceServer,
     GetCryptoInfoResponse, HashDataRequest, RecoverSignatureRequest, RecoverSignatureResponse,
     SignMessageRequest, SignMessageResponse, VerifyDataHashRequest,
 };
 use cita_cloud_proto::health_check::health_server::HealthServer;
+use cita_cloud_proto::status_code::StatusCodeEnum;
 use clap::Parser;
 use cloud_util::metrics::{run_metrics_exporter, MiddlewareLayer};
 use log::{debug, info, warn};
-use status_code::StatusCode;
 use std::net::AddrParseError;
 use tonic::{transport::Server, Request, Response, Status};
 
@@ -104,7 +104,7 @@ impl CryptoService for CryptoServer {
     ) -> Result<Response<GetCryptoInfoResponse>, Status> {
         debug!("get_crypto_info");
         Ok(Response::new(GetCryptoInfoResponse {
-            status: Some(StatusCode::Success.into()),
+            status: Some(StatusCodeEnum::Success.into()),
             name: crypto::CONFIG_TYPE.to_string(),
             hash_len: sm::HASH_BYTES_LEN as u32,
             signature_len: sm::SM2_SIGNATURE_BYTES_LEN as u32,
@@ -122,7 +122,7 @@ impl CryptoService for CryptoServer {
         let data = req.data;
 
         Ok(Response::new(HashResponse {
-            status: Some(StatusCode::Success.into()),
+            status: Some(StatusCodeEnum::Success.into()),
             hash: Some(Hash {
                 hash: self.crypto.hash_data(&data),
             }),
@@ -132,7 +132,7 @@ impl CryptoService for CryptoServer {
     async fn verify_data_hash(
         &self,
         request: Request<VerifyDataHashRequest>,
-    ) -> Result<Response<cita_cloud_proto::common::StatusCode>, Status> {
+    ) -> Result<Response<StatusCode>, Status> {
         debug!("verify_data_hash request: {:?}", request);
 
         let req = request.into_inner();
@@ -163,7 +163,7 @@ impl CryptoService for CryptoServer {
             },
             |signature| {
                 Ok(Response::new(SignMessageResponse {
-                    status: Some(StatusCode::Success.into()),
+                    status: Some(StatusCodeEnum::Success.into()),
                     signature,
                 }))
             },
@@ -190,7 +190,7 @@ impl CryptoService for CryptoServer {
             },
             |address| {
                 Ok(Response::new(RecoverSignatureResponse {
-                    status: Some(StatusCode::Success.into()),
+                    status: Some(StatusCodeEnum::Success.into()),
                     address,
                 }))
             },
@@ -200,7 +200,7 @@ impl CryptoService for CryptoServer {
     async fn check_transactions(
         &self,
         request: Request<RawTransactions>,
-    ) -> Result<Response<cita_cloud_proto::common::StatusCode>, Status> {
+    ) -> Result<Response<StatusCode>, Status> {
         debug!("check_transactions request: {:?}", request);
         let req = request.into_inner();
         Ok(Response::new(check_transactions(&req).into()))
@@ -208,7 +208,7 @@ impl CryptoService for CryptoServer {
 }
 
 #[tokio::main]
-async fn run(opts: RunOpts) -> Result<(), StatusCode> {
+async fn run(opts: RunOpts) -> Result<(), StatusCodeEnum> {
     tokio::spawn(cloud_util::signal::handle_signals());
 
     let config = CryptoConfig::new(&opts.config_path);
@@ -224,7 +224,7 @@ async fn run(opts: RunOpts) -> Result<(), StatusCode> {
     let addr_str = format!("0.0.0.0:{}", grpc_port);
     let addr = addr_str.parse().map_err(|e: AddrParseError| {
         warn!("grpc listen addr parse failed: {} ", e.to_string());
-        StatusCode::FatalError
+        StatusCodeEnum::FatalError
     })?;
 
     let layer = if config.enable_metrics {
@@ -254,7 +254,7 @@ async fn run(opts: RunOpts) -> Result<(), StatusCode> {
             .await
             .map_err(|e| {
                 warn!("start crypto_sm grpc server failed: {} ", e.to_string());
-                StatusCode::FatalError
+                StatusCodeEnum::FatalError
             })?;
     } else {
         info!("metrics off");
@@ -267,7 +267,7 @@ async fn run(opts: RunOpts) -> Result<(), StatusCode> {
             .await
             .map_err(|e| {
                 warn!("start crypto_sm grpc server failed: {} ", e.to_string());
-                StatusCode::FatalError
+                StatusCodeEnum::FatalError
             })?;
     }
 
