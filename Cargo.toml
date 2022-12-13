@@ -1,6 +1,6 @@
 [package]
 name = "crypto"
-version = "6.6.2"
+version = "6.6.3"
 authors = ["Rivtower Technologies <contact@rivtower.com>"]
 license = "Apache-2.0"
 edition = "2021"
@@ -15,8 +15,8 @@ tokio = { version = "1.21", features = ["full"] }
 hex = "0.4"
 tower = "0.4.13"
 
-cloud-util = { package = "cloud-util", git = "https://github.com/cita-cloud/cloud-common-rs.git" }
-cita_cloud_proto = { package = "cita_cloud_proto", git = "https://github.com/cita-cloud/cloud-common-rs.git" }
+cloud-util = "0.6.0"
+cita_cloud_proto = "6.6.3"
 
 libsm = "0.5"
 efficient-sm2 = "0.1"
