@@ -214,14 +214,14 @@ async fn run(opts: RunOpts) -> Result<(), StatusCodeEnum> {
     let config = CryptoConfig::new(&opts.config_path);
     // init log4rs
     log4rs::init_file(&opts.log_file, Default::default())
-        .map_err(|e| println!("log init err: {}", e))
+        .map_err(|e| println!("log init err: {e}"))
         .unwrap();
 
     let grpc_port = config.crypto_port.to_string();
 
     info!("grpc port of crypto_sm: {}", grpc_port);
 
-    let addr_str = format!("0.0.0.0:{}", grpc_port);
+    let addr_str = format!("0.0.0.0:{grpc_port}");
     let addr = addr_str.parse().map_err(|e: AddrParseError| {
         warn!("grpc listen addr parse failed: {} ", e.to_string());
         StatusCodeEnum::FatalError
