@@ -34,11 +34,11 @@ fn sm2_sign(
     msg: &[u8],
 ) -> Result<[u8; SM2_SIGNATURE_BYTES_LEN], StatusCodeEnum> {
     let key_pair = efficient_sm2::KeyPair::new(privkey).map_err(|e| {
-        log::warn!("sm2_sign: KeyPair_new failed: {}", e);
+        log::warn!("sm2_sign: KeyPair_new failed: {:?}", e);
         StatusCodeEnum::ConstructKeyPairError
     })?;
     let sig = key_pair.sign(msg).map_err(|e| {
-        log::warn!("sm2_sign: KeyPair_sign failed: {}", e);
+        log::warn!("sm2_sign: KeyPair_sign failed: {:?}", e);
         StatusCodeEnum::SignError
     })?;
 
@@ -56,12 +56,12 @@ fn sm2_recover(signature: &[u8], message: &[u8]) -> Result<Vec<u8>, StatusCodeEn
 
     let public_key = efficient_sm2::PublicKey::new(&pk[..32], &pk[32..]);
     let sig = efficient_sm2::Signature::new(r, s).map_err(|e| {
-        log::warn!("sm2_recover: Signature_new failed: {}", e);
+        log::warn!("sm2_recover: Signature_new failed: {:?}", e);
         StatusCodeEnum::ConstructSigError
     })?;
 
     sig.verify(&public_key, message).map_err(|e| {
-        log::warn!("sm2_recover: Signature_verify failed: {}", e);
+        log::warn!("sm2_recover: Signature_verify failed: {:?}", e);
         StatusCodeEnum::SigCheckError
     })?;
 
