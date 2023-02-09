@@ -34,11 +34,11 @@ fn sm2_sign(
     msg: &[u8],
 ) -> Result<[u8; SM2_SIGNATURE_BYTES_LEN], StatusCodeEnum> {
     let key_pair = efficient_sm2::KeyPair::new(privkey).map_err(|e| {
-        log::warn!("sm2_sign: KeyPair_new failed: {:?}", e);
+        warn!("sm2_sign: KeyPair_new failed: {:?}", e);
         StatusCodeEnum::ConstructKeyPairError
     })?;
     let sig = key_pair.sign(msg).map_err(|e| {
-        log::warn!("sm2_sign: KeyPair_sign failed: {:?}", e);
+        warn!("sm2_sign: KeyPair_sign failed: {:?}", e);
         StatusCodeEnum::SignError
     })?;
 
@@ -56,12 +56,12 @@ fn sm2_recover(signature: &[u8], message: &[u8]) -> Result<Vec<u8>, StatusCodeEn
 
     let public_key = efficient_sm2::PublicKey::new(&pk[..32], &pk[32..]);
     let sig = efficient_sm2::Signature::new(r, s).map_err(|e| {
-        log::warn!("sm2_recover: Signature_new failed: {:?}", e);
+        warn!("sm2_recover: Signature_new failed: {:?}", e);
         StatusCodeEnum::ConstructSigError
     })?;
 
     sig.verify(&public_key, message).map_err(|e| {
-        log::warn!("sm2_recover: Signature_verify failed: {:?}", e);
+        warn!("sm2_recover: Signature_verify failed: {:?}", e);
         StatusCodeEnum::SigCheckError
     })?;
 
@@ -118,7 +118,7 @@ pub fn check_transactions(raw_txs: &RawTransactions) -> StatusCodeEnum {
             .par_iter()
             .map(|raw_tx| {
                 check_transaction(raw_tx).map_err(|status| {
-                    log::warn!(
+                    warn!(
                         "check_raw_tx tx(0x{}) failed: {}",
                         hex::encode(get_tx_hash(raw_tx).unwrap()),
                         status
@@ -149,7 +149,7 @@ fn check_transaction(raw_tx: &RawTransaction) -> Result<(), StatusCodeEnum> {
             let mut tx_bytes: Vec<u8> = Vec::new();
             if let Some(tx) = &normal_tx.transaction {
                 tx.encode(&mut tx_bytes).map_err(|_| {
-                    log::warn!("check_raw_tx: encode transaction failed");
+                    warn!("check_raw_tx: encode transaction failed");
                     StatusCodeEnum::EncodeError
                 })?;
             } else {
@@ -177,7 +177,7 @@ fn check_transaction(raw_tx: &RawTransaction) -> Result<(), StatusCodeEnum> {
             let mut tx_bytes: Vec<u8> = Vec::new();
             if let Some(tx) = utxo_tx.transaction.as_ref() {
                 tx.encode(&mut tx_bytes).map_err(|_| {
-                    log::warn!("check_raw_tx: encode utxo failed");
+                    warn!("check_raw_tx: encode utxo failed");
                     StatusCodeEnum::EncodeError
                 })?;
             } else {

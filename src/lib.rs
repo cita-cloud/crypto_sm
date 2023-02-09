@@ -14,3 +14,6 @@
 
 pub mod crypto;
 pub mod sm;
+
+#[macro_use]
+extern crate tracing;

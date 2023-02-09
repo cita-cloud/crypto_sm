@@ -1,2 +1,10 @@
 [crypto_sm]
 crypto_port = 60005
+domain = "test-chain-node1"
+
+[crypto_sm.log_config]
+max_level = "info"
+filter = "info"
+# rolling_file_path = "./logs"
+service_name = "crypto"
+# agent_endpoint = "127.0.0.1:6831"
