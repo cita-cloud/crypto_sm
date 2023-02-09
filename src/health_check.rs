@@ -27,6 +27,8 @@ impl Health for HealthCheckServer {
         &self,
         _request: Request<HealthCheckRequest>,
     ) -> Result<Response<HealthCheckResponse>, Status> {
+        info!("healthcheck entry!");
+
         let reply = Response::new(HealthCheckResponse {
             status: ServingStatus::Serving.into(),
         });

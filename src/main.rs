@@ -18,6 +18,9 @@ mod health_check;
 mod panic_hook;
 mod sm;
 
+#[macro_use]
+extern crate tracing;
+
 use crate::config::CryptoConfig;
 use crate::crypto::Crypto;
 use crate::health_check::HealthCheckServer;
@@ -35,12 +38,10 @@ use cita_cloud_proto::health_check::health_server::HealthServer;
 use cita_cloud_proto::status_code::StatusCodeEnum;
 use clap::Parser;
 use cloud_util::metrics::{run_metrics_exporter, MiddlewareLayer};
-use log::{debug, info, warn};
 use std::net::AddrParseError;
 use tonic::{transport::Server, Request, Response, Status};
 
-/// This doc string acts as a help message when the user runs '--help'
-/// as do all doc strings on fields
+/// crypto service
 #[derive(Parser)]
 #[clap(version, author)]
 struct Opts {
@@ -64,9 +65,6 @@ struct RunOpts {
     /// private key path
     #[clap(short = 'p', long = "private_key_path", default_value = "private_key")]
     private_key_path: String,
-    /// log config path
-    #[clap(short = 'l', long = "log", default_value = "crypto-log4rs.yaml")]
-    log_file: String,
 }
 
 fn main() {
@@ -98,10 +96,12 @@ impl CryptoServer {
 
 #[tonic::async_trait]
 impl CryptoService for CryptoServer {
+    #[instrument(skip_all)]
     async fn get_crypto_info(
         &self,
-        _request: Request<Empty>,
+        request: Request<Empty>,
     ) -> Result<Response<GetCryptoInfoResponse>, Status> {
+        cloud_util::tracer::set_parent(&request);
         debug!("get_crypto_info");
         Ok(Response::new(GetCryptoInfoResponse {
             status: Some(StatusCodeEnum::Success.into()),
@@ -112,10 +112,12 @@ impl CryptoService for CryptoServer {
         }))
     }
 
+    #[instrument(skip_all)]
     async fn hash_data(
         &self,
         request: Request<HashDataRequest>,
     ) -> Result<Response<HashResponse>, Status> {
+        cloud_util::tracer::set_parent(&request);
         debug!("hash_data request: {:?}", request);
 
         let req = request.into_inner();
@@ -129,10 +131,12 @@ impl CryptoService for CryptoServer {
         }))
     }
 
+    #[instrument(skip_all)]
     async fn verify_data_hash(
         &self,
         request: Request<VerifyDataHashRequest>,
     ) -> Result<Response<StatusCode>, Status> {
+        cloud_util::tracer::set_parent(&request);
         debug!("verify_data_hash request: {:?}", request);
 
         let req = request.into_inner();
@@ -145,10 +149,12 @@ impl CryptoService for CryptoServer {
     }
 
     // Err code maybe return: aborted/invalid_argument
+    #[instrument(skip_all)]
     async fn sign_message(
         &self,
         request: Request<SignMessageRequest>,
     ) -> Result<Response<SignMessageResponse>, Status> {
+        cloud_util::tracer::set_parent(&request);
         debug!("sign_message request: {:?}", request);
 
         let req = request.into_inner();
@@ -171,10 +177,12 @@ impl CryptoService for CryptoServer {
     }
 
     // Err code maybe return: invalid_argument
+    #[instrument(skip_all)]
     async fn recover_signature(
         &self,
         request: Request<RecoverSignatureRequest>,
     ) -> Result<Response<RecoverSignatureResponse>, Status> {
+        cloud_util::tracer::set_parent(&request);
         debug!("recover_signature request: {:?}", request);
 
         let req = request.into_inner();
@@ -197,10 +205,12 @@ impl CryptoService for CryptoServer {
         )
     }
 
+    #[instrument(skip_all)]
     async fn check_transactions(
         &self,
         request: Request<RawTransactions>,
     ) -> Result<Response<StatusCode>, Status> {
+        cloud_util::tracer::set_parent(&request);
         debug!("check_transactions request: {:?}", request);
         let req = request.into_inner();
         Ok(Response::new(check_transactions(&req).into()))
@@ -212,9 +222,9 @@ async fn run(opts: RunOpts) -> Result<(), StatusCodeEnum> {
     tokio::spawn(cloud_util::signal::handle_signals());
 
     let config = CryptoConfig::new(&opts.config_path);
-    // init log4rs
-    log4rs::init_file(&opts.log_file, Default::default())
-        .map_err(|e| println!("log init err: {e}"))
+    // init tracer
+    cloud_util::tracer::init_tracer(config.domain.clone(), &config.log_config)
+        .map_err(|e| println!("tracer init err: {e}"))
         .unwrap();
 
     let grpc_port = config.crypto_port.to_string();

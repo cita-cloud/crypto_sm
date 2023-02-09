@@ -8,20 +8,17 @@ docker build -t citacloud/crypto_sm .
 
 ```
 $ crypto -h
-crypto 6.6.0
-Rivtower Technologies.
-This doc string acts as a help message when the user runs '--help' as do all doc strings on fields
+crypto service
 
-USAGE:
-    crypto <SUBCOMMAND>
+Usage: crypto <COMMAND>
 
-OPTIONS:
-    -h, --help       Print help information
-    -V, --version    Print version information
+Commands:
+  run   run this service
+  help  Print this message or the help of the given subcommand(s)
 
-SUBCOMMANDS:
-    help    Print this message or the help of the given subcommand(s)
-    run     run this service
+Options:
+  -h, --help     Print help
+  -V, --version  Print version
 ```
 
 ### crypto-run
@@ -30,17 +27,14 @@ SUBCOMMANDS:
 
 ```
 $ crypto run -h
-crypto-run 
 run this service
 
-USAGE:
-    crypto run [OPTIONS]
+Usage: crypto run [OPTIONS]
 
-OPTIONS:
-    -c, --config <CONFIG_PATH>                   Chain config path [default: config.toml]
-    -h, --help                                   Print help information
-    -l, --log <LOG_FILE>                         log config path [default: crypto-log4rs.yaml]
-    -p, --private_key_path <PRIVATE_KEY_PATH>    private key path [default: private_key]
+Options:
+  -c, --config <CONFIG_PATH>                 Chain config path [default: config.toml]
+  -p, --private_key_path <PRIVATE_KEY_PATH>  private key path [default: private_key]
+  -h, --help                                 Print help
 ```
 
 参数：
@@ -48,23 +42,24 @@ OPTIONS:
 
     参见示例`example/config.toml`。
 
-    其中：
+    其中`[crypto_sm]`段为微服务的配置：
     * `crypto_port` 为该服务监听的端口号。
-2. 日志配置文件。
+    * `domain` 节点的域名
 
-    参见示例`crypto-log4rs.yaml`。
+    其中`[crypto_sm.log_config]`段为微服务日志的配置：
+    * `max_level` 日志等级
+    * `filter` 日志过滤配置
+    * `service_name` 服务名称，用作日志文件名与日志采集的服务名称
+    * `rolling_file_path` 日志文件路径
+    * `agent_endpoint` jaeger 采集端地址
 
-    其中：
-
-    * `level` 为日志等级。可选项有：`Error`，`Warn`，`Info`，`Debug`，`Trace`，默认为`Info`。
-    * `appenders` 为输出选项，类型为一个数组。可选项有：标准输出(`stdout`)和滚动的日志文件（`journey-service`），默认为同时输出到两个地方。
-3. 私钥文件路径。
+2. 私钥文件路径。
     文件内容参见示例`example/private_key`。
 
 ```
-$ crypto run -c example/config.toml -l crypto-log4rs.yaml -p example/private_key
-2022-03-09T15:28:49.436281304+08:00 INFO crypto - grpc port of this service: 60005
-2022-03-09T15:28:49.436368800+08:00 INFO crypto - start grpc server!
+$ crypto run -c example/config.toml -p example/private_key
+2023-02-09T02:33:39.049396Z  INFO crypto: grpc port of crypto_sm: 60005
+2023-02-09T02:33:39.049974Z  INFO crypto: start crypto_sm grpc server
 ```
 
 ## 设计

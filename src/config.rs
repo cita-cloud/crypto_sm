@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use cloud_util::common::read_toml;
+use cloud_util::{common::read_toml, tracer::LogConfig};
 use serde_derive::Deserialize;
 
 #[derive(Debug, Deserialize, Clone)]
@@ -22,6 +22,10 @@ pub struct CryptoConfig {
     pub enable_metrics: bool,
     pub metrics_port: u16,
     pub metrics_buckets: Vec<f64>,
+    /// log config
+    pub log_config: LogConfig,
+    /// domain
+    pub domain: String,
 }
 
 impl Default for CryptoConfig {
@@ -33,6 +37,8 @@ impl Default for CryptoConfig {
             metrics_buckets: vec![
                 0.25, 0.5, 0.75, 1.0, 2.5, 5.0, 7.5, 10.0, 25.0, 50.0, 75.0, 100.0, 250.0, 500.0,
             ],
+            log_config: Default::default(),
+            domain: Default::default(),
         }
     }
 }
@@ -52,5 +58,6 @@ mod tests {
         let config = CryptoConfig::new("example/config.toml");
 
         assert_eq!(config.crypto_port, 60005);
+        assert_eq!(config.domain, "test-chain-node1");
     }
 }
