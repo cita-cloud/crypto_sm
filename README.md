@@ -8,7 +8,7 @@ docker build -t citacloud/crypto_sm .
 
 ```
 $ crypto -h
-crypto 6.6.3
+crypto 6.6.4
 Rivtower Technologies <contact@rivtower.com>
 
 Usage: crypto <COMMAND>
