@@ -75,6 +75,12 @@ fn main() {
     // (as below), requesting just the name used, or both at the same time
     match opts.subcmd {
         SubCommand::Run(opts) => {
+            let config = CryptoConfig::new(&opts.config_path);
+            // init tracer
+            cloud_util::tracer::init_tracer(config.domain, &config.log_config)
+                .map_err(|e| println!("tracer init err: {e}"))
+                .unwrap();
+
             let fin = run(opts);
             warn!("Should not reach here {:?}", fin);
         }
@@ -220,10 +226,6 @@ async fn run(opts: RunOpts) -> Result<(), StatusCodeEnum> {
     tokio::spawn(cloud_util::signal::handle_signals());
 
     let config = CryptoConfig::new(&opts.config_path);
-    // init tracer
-    cloud_util::tracer::init_tracer(config.domain.clone(), &config.log_config)
-        .map_err(|e| println!("tracer init err: {e}"))
-        .unwrap();
 
     let grpc_port = config.crypto_port.to_string();
 
