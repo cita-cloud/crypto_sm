@@ -33,12 +33,13 @@ use cita_cloud_proto::health_check::health_server::HealthServer;
 use cita_cloud_proto::status_code::StatusCodeEnum;
 use clap::Parser;
 use cloud_util::metrics::{run_metrics_exporter, MiddlewareLayer};
+use cloud_util::panic_hook::set_panic_handler;
 use config::CryptoConfig;
 use health_check::HealthCheckServer;
 use sm::{check_transactions, ADDR_BYTES_LEN, SM2_SIGNATURE_BYTES_LEN};
 use std::net::AddrParseError;
 use tonic::{transport::Server, Request, Response, Status};
-use util::{clap_about, set_panic_handler};
+use util::clap_about;
 
 #[derive(Parser)]
 #[clap(version, about = clap_about())]

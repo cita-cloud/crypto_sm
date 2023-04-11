@@ -57,7 +57,7 @@ mod tests {
     fn basic_test() {
         let config = CryptoConfig::new("example/config.toml");
 
-        assert_eq!(config.crypto_port, 60005);
+        assert_eq!(config.crypto_port, 50005);
         assert_eq!(config.domain, "test-chain-node1");
     }
 }
