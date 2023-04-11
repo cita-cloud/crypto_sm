@@ -1,5 +1,5 @@
 [crypto_sm]
-crypto_port = 60005
+crypto_port = 50005
 domain = "test-chain-node1"
 
 [crypto_sm.log_config]
