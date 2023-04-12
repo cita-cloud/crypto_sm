@@ -232,7 +232,7 @@ async fn run(opts: RunOpts) -> Result<(), StatusCodeEnum> {
 
     let addr_str = format!("0.0.0.0:{grpc_port}");
     let addr = addr_str.parse().map_err(|e: AddrParseError| {
-        warn!("grpc listen addr parse failed: {} ", e.to_string());
+        warn!("grpc listen addr parse failed: {:?} ", e);
         StatusCodeEnum::FatalError
     })?;
 
@@ -251,10 +251,10 @@ async fn run(opts: RunOpts) -> Result<(), StatusCodeEnum> {
     };
 
     info!("start crypto_sm grpc server");
-    if layer.is_some() {
+    if let Some(layer) = layer {
         info!("metrics on");
         Server::builder()
-            .layer(layer.unwrap())
+            .layer(layer)
             .add_service(CryptoServiceServer::new(CryptoServer::new(Crypto::new(
                 &opts.private_key_path,
             ))))
@@ -262,7 +262,7 @@ async fn run(opts: RunOpts) -> Result<(), StatusCodeEnum> {
             .serve(addr)
             .await
             .map_err(|e| {
-                warn!("start crypto_sm grpc server failed: {} ", e.to_string());
+                warn!("start crypto_sm grpc server failed: {:?} ", e);
                 StatusCodeEnum::FatalError
             })?;
     } else {
@@ -275,7 +275,7 @@ async fn run(opts: RunOpts) -> Result<(), StatusCodeEnum> {
             .serve(addr)
             .await
             .map_err(|e| {
-                warn!("start crypto_sm grpc server failed: {} ", e.to_string());
+                warn!("start crypto_sm grpc server failed: {:?} ", e);
                 StatusCodeEnum::FatalError
             })?;
     }

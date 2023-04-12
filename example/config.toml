@@ -1,6 +1,7 @@
 [crypto_sm]
 crypto_port = 50005
 domain = "test-chain-node1"
+enable_metrics = false
 
 [crypto_sm.log_config]
 max_level = "info"
