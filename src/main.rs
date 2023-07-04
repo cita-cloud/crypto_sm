@@ -36,7 +36,7 @@ use cloud_util::metrics::{run_metrics_exporter, MiddlewareLayer};
 use cloud_util::panic_hook::set_panic_handler;
 use config::CryptoConfig;
 use health_check::HealthCheckServer;
-use sm::{check_transactions, ADDR_BYTES_LEN, SM2_SIGNATURE_BYTES_LEN};
+use sm::{crypto_check_batch, ADDR_BYTES_LEN, SM2_SIGNATURE_BYTES_LEN};
 use std::net::AddrParseError;
 use tonic::{transport::Server, Request, Response, Status};
 use util::clap_about;
@@ -212,7 +212,7 @@ impl CryptoService for CryptoServer {
         cloud_util::tracer::set_parent(&request);
         debug!("check_transactions request: {:?}", request);
         let req = request.into_inner();
-        Ok(Response::new(check_transactions(&req).into()))
+        Ok(Response::new(crypto_check_batch(req).into()))
     }
 }
 
