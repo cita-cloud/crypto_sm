@@ -109,36 +109,35 @@ pub fn recover_signature(msg: &[u8], signature: &[u8]) -> Result<Vec<u8>, Status
     }
 }
 
-pub fn check_transactions(raw_txs: &RawTransactions) -> StatusCodeEnum {
+pub fn crypto_check_batch(raw_txs: RawTransactions) -> StatusCodeEnum {
     use rayon::prelude::*;
 
-    match tokio::task::block_in_place(|| {
-        raw_txs
-            .body
-            .par_iter()
-            .map(|raw_tx| {
-                check_transaction(raw_tx).map_err(|status| {
-                    warn!(
-                        "check_raw_tx tx(0x{}) failed: {}",
-                        hex::encode(get_tx_hash(raw_tx).unwrap()),
-                        status
-                    );
+    match raw_txs
+        .body
+        .par_iter()
+        .map(|raw_tx| {
+            crypto_check(raw_tx.to_owned()).map_err(|status| {
+                warn!(
+                    "check_raw_tx tx(0x{}) failed: {}",
+                    hex::encode(get_tx_hash(raw_tx).unwrap()),
                     status
-                })?;
-
-                Ok(())
-            })
-            .collect::<Result<(), StatusCodeEnum>>()
-    }) {
+                );
+                status
+            })?;
+            Ok(())
+        })
+        .collect::<Result<(), StatusCodeEnum>>()
+    {
         Ok(()) => StatusCodeEnum::Success,
         Err(status) => status,
     }
 }
 
-fn check_transaction(raw_tx: &RawTransaction) -> Result<(), StatusCodeEnum> {
+pub fn crypto_check(raw_tx: RawTransaction) -> Result<(), StatusCodeEnum> {
     match raw_tx.tx.as_ref() {
         Some(NormalTx(normal_tx)) => {
             if normal_tx.witness.is_none() {
+                warn!("crypto_check failed: no witness");
                 return Err(StatusCodeEnum::NoneWitness);
             }
 
@@ -149,10 +148,11 @@ fn check_transaction(raw_tx: &RawTransaction) -> Result<(), StatusCodeEnum> {
             let mut tx_bytes: Vec<u8> = Vec::new();
             if let Some(tx) = &normal_tx.transaction {
                 tx.encode(&mut tx_bytes).map_err(|_| {
-                    warn!("check_raw_tx: encode transaction failed");
+                    warn!("crypto_check failed: encode transaction failed");
                     StatusCodeEnum::EncodeError
                 })?;
             } else {
+                warn!("crypto_check failed: no teansaction");
                 return Err(StatusCodeEnum::NoneTransaction);
             }
 
@@ -163,6 +163,7 @@ fn check_transaction(raw_tx: &RawTransaction) -> Result<(), StatusCodeEnum> {
             if &pk2address(&recover_signature(tx_hash, signature)?) == sender {
                 Ok(())
             } else {
+                warn!("crypto_check failed: sig check error");
                 Err(StatusCodeEnum::SigCheckError)
             }
         }
@@ -171,16 +172,18 @@ fn check_transaction(raw_tx: &RawTransaction) -> Result<(), StatusCodeEnum> {
 
             // limit witnesses length is 1
             if witnesses.len() != 1 {
+                warn!("crypto_check failed: invalid witness");
                 return Err(StatusCodeEnum::InvalidWitness);
             }
 
             let mut tx_bytes: Vec<u8> = Vec::new();
             if let Some(tx) = utxo_tx.transaction.as_ref() {
                 tx.encode(&mut tx_bytes).map_err(|_| {
-                    warn!("check_raw_tx: encode utxo failed");
+                    warn!("crypto_check: encode utxo failed");
                     StatusCodeEnum::EncodeError
                 })?;
             } else {
+                warn!("crypto_check failed: no utxo");
                 return Err(StatusCodeEnum::NoneUtxo);
             }
 
@@ -192,6 +195,7 @@ fn check_transaction(raw_tx: &RawTransaction) -> Result<(), StatusCodeEnum> {
                 let sender = &w.sender;
 
                 if &pk2address(&recover_signature(tx_hash, signature)?) != sender {
+                    warn!("crypto_check failed: sig check error");
                     return Err(StatusCodeEnum::SigCheckError);
                 }
             }
