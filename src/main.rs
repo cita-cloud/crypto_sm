@@ -33,7 +33,6 @@ use cita_cloud_proto::health_check::health_server::HealthServer;
 use cita_cloud_proto::status_code::StatusCodeEnum;
 use clap::Parser;
 use cloud_util::metrics::{run_metrics_exporter, MiddlewareLayer};
-use cloud_util::panic_hook::set_panic_handler;
 use config::CryptoConfig;
 use health_check::HealthCheckServer;
 use sm::{crypto_check_batch, ADDR_BYTES_LEN, SM2_SIGNATURE_BYTES_LEN};
@@ -68,7 +67,6 @@ struct RunOpts {
 
 fn main() {
     ::std::env::set_var("RUST_BACKTRACE", "full");
-    set_panic_handler();
 
     let opts: Opts = Opts::parse();
 
@@ -76,8 +74,9 @@ fn main() {
     // (as below), requesting just the name used, or both at the same time
     match opts.subcmd {
         SubCommand::Run(opts) => {
-            let fin = run(opts);
-            warn!("Should not reach here {:?}", fin);
+            if let Err(e) = run(opts) {
+                warn!("Should not reach here {e:?}");
+            }
         }
     }
 }
@@ -218,7 +217,7 @@ impl CryptoService for CryptoServer {
 
 #[tokio::main]
 async fn run(opts: RunOpts) -> Result<(), StatusCodeEnum> {
-    tokio::spawn(cloud_util::signal::handle_signals());
+    let rx_signal = cloud_util::graceful_shutdown::graceful_shutdown();
 
     let config = CryptoConfig::new(&opts.config_path);
     // init tracer
@@ -259,7 +258,10 @@ async fn run(opts: RunOpts) -> Result<(), StatusCodeEnum> {
                 &opts.private_key_path,
             ))))
             .add_service(HealthServer::new(HealthCheckServer {}))
-            .serve(addr)
+            .serve_with_shutdown(
+                addr,
+                cloud_util::graceful_shutdown::grpc_serve_listen_term(rx_signal),
+            )
             .await
             .map_err(|e| {
                 warn!("start crypto_sm grpc server failed: {:?} ", e);
@@ -272,7 +274,10 @@ async fn run(opts: RunOpts) -> Result<(), StatusCodeEnum> {
                 &opts.private_key_path,
             ))))
             .add_service(HealthServer::new(HealthCheckServer {}))
-            .serve(addr)
+            .serve_with_shutdown(
+                addr,
+                cloud_util::graceful_shutdown::grpc_serve_listen_term(rx_signal),
+            )
             .await
             .map_err(|e| {
                 warn!("start crypto_sm grpc server failed: {:?} ", e);
