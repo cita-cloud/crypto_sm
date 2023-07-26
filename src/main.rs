@@ -211,7 +211,7 @@ impl CryptoService for CryptoServer {
         cloud_util::tracer::set_parent(&request);
         debug!("check_transactions request: {:?}", request);
         let req = request.into_inner();
-        Ok(Response::new(crypto_check_batch(req).into()))
+        Ok(Response::new(crypto_check_batch(&req).into()))
     }
 }
 

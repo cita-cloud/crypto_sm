@@ -109,14 +109,14 @@ pub fn recover_signature(msg: &[u8], signature: &[u8]) -> Result<Vec<u8>, Status
     }
 }
 
-pub fn crypto_check_batch(raw_txs: RawTransactions) -> StatusCodeEnum {
+pub fn crypto_check_batch(raw_txs: &RawTransactions) -> StatusCodeEnum {
     use rayon::prelude::*;
 
     match raw_txs
         .body
         .par_iter()
         .map(|raw_tx| {
-            crypto_check(raw_tx.to_owned()).map_err(|status| {
+            crypto_check(raw_tx).map_err(|status| {
                 warn!(
                     "check_raw_tx tx(0x{}) failed: {}",
                     hex::encode(get_tx_hash(raw_tx).unwrap()),
@@ -133,7 +133,7 @@ pub fn crypto_check_batch(raw_txs: RawTransactions) -> StatusCodeEnum {
     }
 }
 
-pub fn crypto_check(raw_tx: RawTransaction) -> Result<(), StatusCodeEnum> {
+pub fn crypto_check(raw_tx: &RawTransaction) -> Result<(), StatusCodeEnum> {
     match raw_tx.tx.as_ref() {
         Some(NormalTx(normal_tx)) => {
             if normal_tx.witness.is_none() {
