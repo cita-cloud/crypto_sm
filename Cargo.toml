@@ -6,7 +6,7 @@ license = "Apache-2.0"
 edition = "2021"
 
 [dependencies]
-log = "0.4"
+log = "=0.4.18"
 log4rs = { version = "1.0", features = ["gzip"] }
 clap = { version = "3.2", features = ["derive"] }
 tonic = "0.7"
@@ -16,7 +16,8 @@ hex = "0.4"
 tower = "0.4.13"
 libsm = "0.5"
 efficient-sm2 = "0.1"
-rayon = "1.5"
+rayon = "=1.6.1"
+rayon-core = "=1.10.2"
 serde = "1.0"
 serde_derive = "1.0"
 backtrace = "0.3"
@@ -24,6 +25,8 @@ backtrace = "0.3"
 cita_cloud_proto = "=6.6.1"
 status_code = { package = "cloud-code", version = "0.5" }
 cloud-util = "0.5.0"
+
+tempfile = "=3.6.0"
 
 [profile.release.package."*"]
 # Set the default for dependencies.
