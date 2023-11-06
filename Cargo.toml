@@ -19,8 +19,8 @@ serde = "1.0"
 serde_derive = "1.0"
 tracing = "0.1"
 
-cloud-util = "=0.8.0-beta.3"
-cita_cloud_proto = "=6.7.2-beta.3"
+cloud-util = { package = "cloud-util", git = "https://github.com/cita-cloud/cloud-common-rs" }
+cita_cloud_proto = { package = "cita_cloud_proto", git = "https://github.com/cita-cloud/cloud-common-rs" }
 
 [profile.release.package."*"]
 # Set the default for dependencies.
