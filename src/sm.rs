@@ -112,7 +112,7 @@ pub fn recover_signature(msg: &[u8], signature: &[u8]) -> Result<Vec<u8>, Status
 pub fn crypto_check_batch(raw_txs: &RawTransactions) -> StatusCodeEnum {
     use rayon::prelude::*;
 
-    match raw_txs
+    let ret = raw_txs
         .body
         .par_iter()
         .map(|raw_tx| {
@@ -126,8 +126,8 @@ pub fn crypto_check_batch(raw_txs: &RawTransactions) -> StatusCodeEnum {
             })?;
             Ok(())
         })
-        .collect::<Result<(), StatusCodeEnum>>()
-    {
+        .collect::<Result<(), StatusCodeEnum>>();
+    match ret {
         Ok(()) => StatusCodeEnum::Success,
         Err(status) => status,
     }
@@ -190,7 +190,7 @@ pub fn crypto_check(raw_tx: &RawTransaction) -> Result<(), StatusCodeEnum> {
             let tx_hash = &utxo_tx.transaction_hash;
             verify_data_hash(&tx_bytes, tx_hash)?;
 
-            for (_i, w) in witnesses.iter().enumerate() {
+            for w in witnesses {
                 let signature = &w.signature;
                 let sender = &w.sender;
 
