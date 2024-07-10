@@ -229,7 +229,7 @@ async fn run(opts: RunOpts) -> Result<(), StatusCodeEnum> {
 
     info!("grpc port of crypto_sm: {}", grpc_port);
 
-    let addr_str = format!("0.0.0.0:{grpc_port}");
+    let addr_str = format!("[::]:{grpc_port}");
     let addr = addr_str.parse().map_err(|e: AddrParseError| {
         warn!("grpc listen addr parse failed: {:?} ", e);
         StatusCodeEnum::FatalError
