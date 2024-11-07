@@ -116,13 +116,12 @@ pub fn crypto_check_batch(raw_txs: &RawTransactions) -> StatusCodeEnum {
         .body
         .par_iter()
         .map(|raw_tx| {
-            crypto_check(raw_tx).map_err(|status| {
+            crypto_check(raw_tx).inspect_err(|&status| {
                 warn!(
                     "check_raw_tx tx(0x{}) failed: {}",
                     hex::encode(get_tx_hash(raw_tx).unwrap()),
                     status
                 );
-                status
             })?;
             Ok(())
         })
