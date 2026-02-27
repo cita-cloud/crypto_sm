@@ -25,19 +25,19 @@ use crate::crypto::Crypto;
 use cita_cloud_proto::blockchain::RawTransactions;
 use cita_cloud_proto::common::{Empty, Hash, HashResponse, StatusCode};
 use cita_cloud_proto::crypto::{
-    crypto_service_server::CryptoService, crypto_service_server::CryptoServiceServer,
     GetCryptoInfoResponse, HashDataRequest, RecoverSignatureRequest, RecoverSignatureResponse,
     SignMessageRequest, SignMessageResponse, VerifyDataHashRequest,
+    crypto_service_server::CryptoService, crypto_service_server::CryptoServiceServer,
 };
 use cita_cloud_proto::health_check::health_server::HealthServer;
 use cita_cloud_proto::status_code::StatusCodeEnum;
 use clap::Parser;
-use cloud_util::metrics::{run_metrics_exporter, MiddlewareLayer};
+use cloud_util::metrics::{MiddlewareLayer, run_metrics_exporter};
 use config::CryptoConfig;
 use health_check::HealthCheckServer;
-use sm::{crypto_check_batch, ADDR_BYTES_LEN, SM2_SIGNATURE_BYTES_LEN};
+use sm::{ADDR_BYTES_LEN, SM2_SIGNATURE_BYTES_LEN, crypto_check_batch};
 use std::net::AddrParseError;
-use tonic::{transport::Server, Request, Response, Status};
+use tonic::{Request, Response, Status, transport::Server};
 use util::clap_about;
 
 #[derive(Parser)]
@@ -66,8 +66,6 @@ struct RunOpts {
 }
 
 fn main() {
-    ::std::env::set_var("RUST_BACKTRACE", "full");
-
     let opts: Opts = Opts::parse();
 
     // You can handle information about subcommands by requesting their matches by name
